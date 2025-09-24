@@ -43,6 +43,34 @@ const allUsers = (done) => {
   });
 }
 
+const addExercise = (userId, description, duration, date, done) => {
+  User.findById(userId, (err, userData) => {
+    if (err) {
+      done(err)
+    } else if (!userData) {
+      done(new Error('User not found'))
+    } else {
+      let newExercise = new Exercise({
+        userId: userId,
+        description: description,
+        duration: duration,
+        date: date ? new Date(date).toDateString() : new Date().toDateString()
+      });
+      newExercise.save((err, data) => {
+        if (err) done(err)
+        else done(null, data)
+      });
+    }
+  });
+}
+
+const findUserById = (userId, done) => {
+  User.findById(userId, (err, userData) => {
+    if (err) done(err)
+    else done(null, userData)
+  }); 
+}
+
 /* Endpoints */
 
 app.get('/', (req, res) => {
@@ -75,6 +103,38 @@ app.get("/api/users", (req, res) => {
       })
     } else {
       res.status(200).json(data)
+    }
+  });
+});
+
+// POST /api/users/:_id/exercises
+app.post("/api/users/:_id/exercises", (req, res) => {
+  const userId = req.params._id
+  const description = req.body.description
+  const duration = req.body.duration
+  const date = req.body.date
+
+  addExercise(userId, description, duration, date, (err, data) => {
+    if (err) {
+      res.status(500).json({
+        "error": err.message
+      })
+    } else {
+      findUserById(userId, (err, userData) => {
+        if (err) {
+          res.status(500).json({
+            "error": err.message
+          })
+        } else {
+          res.status(200).json({
+            "_id": userData._id,
+            "username": userData.username,
+            "description": data.description,
+            "duration": data.duration,
+            "date": data.date
+          })
+        }
+      });
     }
   });
 });
