@@ -1,6 +1,10 @@
 const mongoose = require('mongoose');
 
 let exerciseSchema = mongoose.Schema({
+    userId: {
+        type: String,
+        required: true
+    },
     description: {
         type: String,
         required: true

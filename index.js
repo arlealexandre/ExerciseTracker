@@ -71,6 +71,13 @@ const findUserById = (userId, done) => {
   }); 
 }
 
+const findAllExercises = (userId, done) => {
+  Exercise.find({userId: userId}, (err, exercises) => {
+    if (err) done(err)
+    else done(null, exercises)
+  });
+}
+
 /* Endpoints */
 
 app.get('/', (req, res) => {
@@ -132,6 +139,51 @@ app.post("/api/users/:_id/exercises", (req, res) => {
             "description": data.description,
             "duration": data.duration,
             "date": data.date
+          })
+        }
+      });
+    }
+  });
+});
+
+// GET /api/users/:_id/logs
+app.get("/api/users/:_id/logs", (req, res) => {
+  const userId = req.params._id
+  const from = req.query.from
+  const to = req.query.to
+  const limit = req.query.limit
+  findUserById(userId, (err, userData) => {
+    if (err) {
+      res.status(500).json({
+        "error": err.message
+      })
+    } else {
+      findAllExercises(userId, (err, exercises) => {
+        if (err) {
+          res.status(500).json({
+            "error": err.message
+          })
+        } else {
+          // Filter exercises by date range
+          if (from) {
+            exercises = exercises.filter(ex => new Date(ex.date) >= new Date(from))
+          }
+          if (to) {
+            exercises = exercises.filter(ex => new Date(ex.date) <= new Date(to))
+          }
+          // Limit the number of exercises returned
+          if (limit) {
+            exercises = exercises.slice(0, limit)
+          }
+          res.status(200).json({
+            "_id": userData._id,
+            "count": exercises.length,
+            "username": userData.username,
+            "log": [...exercises.map(ex => ({
+              description: ex.description,
+              duration: ex.duration,
+              date: ex.date.toDateString()
+            }))]
           })
         }
       });
